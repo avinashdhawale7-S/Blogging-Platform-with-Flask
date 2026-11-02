@@ -27,15 +27,30 @@
               <a class="nav-link" href="{{ url_for('main.index') }}">Home</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('posts.index') }}">Posts</a>
+              <a class="nav-link" href="{{ url_for('posts.index') }}">Articles</a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('main.about') }}">About</a>
             </li>
           </ul>
 
+          <!-- Global Search Input in Navbar -->
+          <form class="d-flex me-lg-3 my-2 my-lg-0" role="search" method="GET" action="{{ url_for('posts.search') }}">
+            <div class="input-group input-group-sm">
+              <input class="form-control" type="search" name="q" placeholder="Search posts..." aria-label="Search" style="min-width: 180px;">
+              <button class="btn btn-outline-light" type="submit" title="Search">
+                <i class="bi bi-search"></i>
+              </button>
+            </div>
+          </form>
+
           <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
             {% if current_user.is_authenticated %}
+              <li class="nav-item me-2 d-none d-lg-block">
+                <a href="{{ url_for('posts.create') }}" class="btn btn-primary btn-sm px-3 shadow-sm">
+                  <i class="bi bi-pencil-square me-1"></i> Write
+                </a>
+              </li>
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle text-white d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                   <i class="bi bi-person-circle fs-5 me-2 text-primary"></i>
@@ -43,8 +58,18 @@
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                   <li>
+                    <a class="dropdown-item" href="{{ url_for('main.user_profile', username=current_user.username) }}">
+                      <i class="bi bi-person-badge me-2"></i>My Public Profile
+                    </a>
+                  </li>
+                  <li>
                     <a class="dropdown-item" href="{{ url_for('auth.profile') }}">
-                      <i class="bi bi-person-badge me-2"></i>Profile
+                      <i class="bi bi-gear me-2"></i>Account Settings
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('posts.create') }}">
+                      <i class="bi bi-pencil-square me-2"></i>New Article
                     </a>
                   </li>
                   <li><hr class="dropdown-divider"></li>
@@ -93,7 +118,7 @@
     <footer class="py-4 bg-white border-top text-center text-muted small mt-auto">
       <div class="container">
         <p class="mb-1">&copy; 2026 FlaskBlog - DIY Internship Project</p>
-        <p class="mb-0">Week 2: User Authentication with Flask-Login & Session Management</p>
+        <p class="mb-0">Week 6: Search & Filtering using SQLAlchemy ORM Querying</p>
       </div>
     </footer>
 

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_pagination %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <!-- Search & Filter Card -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-4">
+        <h3 class="fw-bold text-dark mb-3">
+          <i class="bi bi-search text-primary me-2"></i>Search & Filter Articles
+        </h3>
+
+        <form method="GET" action="{{ url_for('posts.search') }}" class="row g-2 align-items-center">
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+              <input type="text" name="q" class="form-control" placeholder="Search by title or content keywords..." value="{{ query }}">
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <select name="tag" class="form-select">
+              <option value="">All Categories / Tags</option>
+              {% for t in tags %}
+                <option value="{{ t.name }}" {% if selected_tag == t.name %}selected{% endif %}>
+                  #{{ t.name }} ({{ t.posts.count() }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-primary">
+              Filter
+            </button>
+          </div>
+        </form>
+
+        <!-- Active Filters Bar -->
+        {% if query or selected_tag %}
+          <div class="d-flex flex-wrap align-items-center gap-2 mt-3 pt-3 border-top small">
+            <span class="text-muted fw-semibold">Active Filters:</span>
+            {% if query %}
+              <span class="badge text-bg-light border text-dark p-2">
+                Keyword: <strong>"{{ query }}"</strong>
+                <a href="{{ url_for('posts.search', tag=selected_tag) }}" class="text-danger ms-1 text-decoration-none" title="Remove keyword filter">&times;</a>
+              </span>
+            {% endif %}
+            {% if selected_tag %}
+              <span class="badge text-bg-light border text-dark p-2">
+                Category: <strong>#{{ selected_tag }}</strong>
+                <a href="{{ url_for('posts.search', q=query) }}" class="text-danger ms-1 text-decoration-none" title="Remove category filter">&times;</a>
+              </span>
+            {% endif %}
+            <a href="{{ url_for('posts.index') }}" class="btn btn-sm btn-link text-decoration-none text-danger p-0 ms-2">
+              Clear All Filters
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Search Results Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+      <h4 class="fw-bold text-dark mb-0">
+        Results
+        {% if query or selected_tag %}
+          <span class="text-muted fw-normal fs-6">
+            (Found {{ pagination.total }} {{ 'article' if pagination.total == 1 else 'articles' }})
+          </span>
+        {% endif %}
+      </h4>
+      {% if pagination.total > 0 %}
+        <span class="text-muted small">
+          Page {{ pagination.page }} of {{ pagination.pages }}
+        </span>
+      {% endif %}
+    </div>
+
+    <!-- Results List -->
+    {% if posts %}
+      <div class="d-flex flex-column gap-3">
+        {% for post in posts %}
+          <article class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="small text-muted d-flex align-items-center">
+                  <a href="{{ url_for('main.user_profile', username=post.author.username) }}" class="fw-semibold text-dark text-decoration-none me-2">
+                    <i class="bi bi-person-circle text-primary me-1"></i>{{ post.author.username }}
+                  </a>
+                  <span>&bull; {{ post.created_at.strftime('%b %d, %Y') }}</span>
+                </div>
+                {% if post.tags %}
+                  <div class="d-flex flex-wrap gap-1">
+                    {% for tag in post.tags %}
+                      <a href="{{ url_for('posts.search', tag=tag.name) }}" class="badge {% if selected_tag == tag.name %}text-bg-primary{% else %}text-bg-light border{% endif %} text-decoration-none">
+                        #{{ tag.name }}
+                      </a>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+
+              <h3 class="card-title fw-bold mb-2">
+                <a href="{{ url_for('posts.detail', post_id=post.id) }}" class="text-decoration-none text-dark">
+                  {{ post.title }}
+                </a>
+              </h3>
+
+              <div class="card-text text-muted mb-3">
+                {{ post.content|striptags|truncate(220, True, '...') }}
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center pt-2">
+                <div class="d-flex align-items-center gap-3">
+                  <a href="{{ url_for('posts.detail', post_id=post.id) }}" class="btn btn-link px-0 text-primary fw-semibold text-decoration-none">
+                    Read Full Article <i class="bi bi-arrow-right ms-1"></i>
+                  </a>
+                  <a href="{{ url_for('posts.detail', post_id=post.id) }}#comments" class="text-muted small text-decoration-none">
+                    <i class="bi bi-chat-left-text me-1"></i>{{ post.comments.count() }} comments
+                  </a>
+                </div>
+                {% if current_user.is_authenticated and current_user == post.author %}
+                  <span class="badge bg-light text-muted border">Your Post</span>
+                {% endif %}
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+
+      <!-- Pagination Preserving Query and Tag -->
+      {{ render_pagination(pagination, 'posts.search', q=query, tag=selected_tag) }}
+
+    {% else %}
+      <div class="card border-0 shadow-sm py-5 text-center text-muted">
+        <div class="card-body">
+          <i class="bi bi-search display-3 d-block mb-3 text-secondary"></i>
+          <h4>No matching articles found!</h4>
+          <p class="text-muted mb-3">
+            We couldn't find any articles matching your search criteria. Try using different keywords or clearing filters.
+          </p>
+          <a href="{{ url_for('posts.index') }}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-counterclockwise me-1"></i> View All Articles
+          </a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

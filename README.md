@@ -32,19 +32,19 @@ A modern, scalable blogging platform built using Flask, Flask-SQLAlchemy, Flask-
   - Public author profile page (`/user/<username>`) with author stats and paginated articles.
 
 ### Week 5: Commenting System
-- **Comment Data Model (`app/models.py`)**:
-  - Created `Comment` model with `body`, `created_at`, foreign key to `users.id`, and foreign key to `posts.id`.
-  - Added cascading relationships so deleting a post or user automatically deletes associated comments.
-- **Comment Form & Validation (`app/posts/forms.py`)**:
-  - Implemented `CommentForm` with CSRF protection and character length validation (2–1000 characters).
-- **Comment Views & Authorization (`app/posts/routes.py`)**:
-  - `POST /posts/<id>/comment`: Restricted to authenticated users (`@login_required`), persists comments, flashes status, and redirects back to `#comments`.
-  - `POST /posts/comment/<id>/delete`: Restricted to the comment author or the post author, preventing unauthorized comment deletions (403 Forbidden).
-- **User Interface (`app/templates/posts/detail.html`)**:
-  - Comment count header (`Comments (X)`).
-  - Clean comment form for logged-in users; prominent sign-in callout for visitors.
-  - Comment stream displaying author avatar, username linked to public profile, timestamp, comment body, and delete button for authors.
-  - Dynamic comment counters displayed on article cards across home and feed pages.
+- **Comment Data Model**: `Comment` model linked to `User` and `Post` with cascading deletes.
+- **Comment Form & Views**: Authenticated comment submission (`/posts/<id>/comment`) and author deletion (`/posts/comment/<id>/delete`).
+- **Interactive UI**: Real-time comment count headers, guest sign-in callout, and author badges.
+
+### Week 6: Search and Filtering
+- **SQLAlchemy ORM Search**:
+  - Utilized `or_` and `ilike` in `app/posts/routes.py` to perform case-insensitive keyword searches across both `Post.title` and `Post.content`.
+- **Category & Tag Filtering**:
+  - Query filtering via `Post.tags.any(Tag.name == selected_tag)` allowing users to filter by specific topics or combine with text search.
+- **Global & Dedicated Search UI**:
+  - Embedded global search input directly into the top navigation bar (`app/templates/base.html`).
+  - Created a dedicated search interface (`app/templates/posts/search.html`) featuring search keyword input, category dropdown, active filter pill badges, result count indicator, and an empty state.
+  - Integrated smart pagination preserving `q` and `tag` query arguments across pages.
 
 ---
 
@@ -62,16 +62,16 @@ Blogging-Platform-with-Flask/
 │   ├── main/                 # Main Blueprint
 │   │   ├── __init__.py
 │   │   └── routes.py         # Home (paginated), User Profile (paginated), About
-│   ├── posts/                # Posts & Comments Blueprint
+│   ├── posts/                # Posts, Tags, Comments & Search Blueprint
 │   │   ├── __init__.py
 │   │   ├── forms.py          # WTForms: PostForm, CommentForm
-│   │   └── routes.py         # CRUD: Posts, Tags, and Comments
+│   │   └── routes.py         # CRUD, Search, Filter, Comments
 │   ├── templates/            # Jinja2 templates
 │   │   ├── _macros.html      # Reusable pagination macro
-│   │   ├── base.html         # Responsive layout with dynamic Auth navbar
+│   │   ├── base.html         # Responsive layout with dynamic Auth navbar & global search
 │   │   ├── auth/             # Login, Register, Account settings views
 │   │   ├── main/             # Home (feed), Author profile, About views
-│   │   └── posts/            # Feed, Detail (with comments), Create, and Edit views
+│   │   └── posts/            # Feed, Detail, Create, Edit, and Search views
 │   └── static/               # CSS and JS assets
 ├── migrations/               # Database migration scripts
 ├── instance/                 # SQLite database instance directory
@@ -128,8 +128,8 @@ Open your browser and navigate to: [http://127.0.0.1:5000](http://127.0.0.1:5000
 
 ## 🛠️ Tech Stack
 - **Backend**: Python 3, Flask
+- **ORM & Querying**: SQLAlchemy (`or_`, `ilike`, `any`), Flask-SQLAlchemy, Flask-Migrate
 - **Frontend / Templating**: Jinja2, Bootstrap 5.3, Bootstrap Icons
 - **Rich Text Editor**: CKEditor 5 Classic
 - **Security & Sanitization**: Bleach, Werkzeug Security, Flask-WTF (CSRF)
 - **Authentication**: Flask-Login
-- **Database ORM & Migrations**: Flask-SQLAlchemy, Flask-Migrate (Alembic)

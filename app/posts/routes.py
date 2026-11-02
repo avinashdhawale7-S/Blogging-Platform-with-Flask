@@ -1,4 +1,5 @@
 import bleach
+from sqlalchemy import or_
 from flask import render_template, redirect, url_for, flash, request, abort, current_app
 from flask_login import current_user, login_required
 from app import db
@@ -55,6 +56,48 @@ def index():
         title='Blog Feed',
         posts=posts,
         pagination=pagination,
+        tags=all_tags
+    )
+
+
+@bp.route('/search')
+def search():
+    """Search posts by title or content, and filter by tags/categories with pagination."""
+    query = request.args.get('q', '').strip()
+    selected_tag = request.args.get('tag', '').strip().lower()
+    page = request.args.get('page', 1, type=int)
+    per_page = current_app.config.get('POSTS_PER_PAGE', 5)
+
+    # Base query
+    posts_query = Post.query
+
+    # Title or content search using SQLAlchemy ORM or_ and ilike
+    if query:
+        search_filter = or_(
+            Post.title.ilike(f'%{query}%'),
+            Post.content.ilike(f'%{query}%')
+        )
+        posts_query = posts_query.filter(search_filter)
+
+    # Tag / category filter using any()
+    if selected_tag:
+        posts_query = posts_query.filter(Post.tags.any(Tag.name == selected_tag))
+
+    pagination = posts_query.order_by(Post.created_at.desc()).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+    posts = pagination.items
+    all_tags = Tag.query.order_by(Tag.name.asc()).all()
+
+    return render_template(
+        'posts/search.html',
+        title='Search Results',
+        posts=posts,
+        pagination=pagination,
+        query=query,
+        selected_tag=selected_tag,
         tags=all_tags
     )
 
@@ -182,24 +225,5 @@ def delete(post_id: int):
 
 @bp.route('/tag/<string:tag_name>')
 def tag_filter(tag_name: str):
-    """Filter posts by tag/category with pagination."""
-    tag = Tag.query.filter_by(name=tag_name.lower()).first_or_404()
-    page = request.args.get('page', 1, type=int)
-    per_page = current_app.config.get('POSTS_PER_PAGE', 5)
-
-    pagination = tag.posts.order_by(Post.created_at.desc()).paginate(
-        page=page,
-        per_page=per_page,
-        error_out=False
-    )
-    posts = pagination.items
-    all_tags = Tag.query.order_by(Tag.name.asc()).all()
-
-    return render_template(
-        'posts/index.html',
-        title=f'Posts tagged #{tag.name}',
-        posts=posts,
-        pagination=pagination,
-        selected_tag=tag,
-        tags=all_tags
-    )
+    """Filter posts by tag/category by redirecting to search with tag filter."""
+    return redirect(url_for('posts.search', tag=tag_name.lower()))
