@@ -21,8 +21,9 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
-    # Relationship to blog posts (one-to-many)
+    # Relationships
     posts = db.relationship('Post', backref='author', lazy='dynamic', cascade='all, delete-orphan')
+    comments = db.relationship('Comment', backref='author', lazy='dynamic', cascade='all, delete-orphan')
 
     def set_password(self, password: str) -> None:
         """Hash and set user password."""
@@ -64,8 +65,9 @@ class Post(db.Model):
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
-    # Many-to-Many relationship with tags
+    # Relationships
     tags = db.relationship('Tag', secondary=post_tags, backref=db.backref('posts', lazy='dynamic'), lazy='subquery')
+    comments = db.relationship('Comment', backref='post', lazy='dynamic', cascade='all, delete-orphan', order_by='Comment.created_at.desc()')
 
     def tags_as_string(self) -> str:
         """Return comma-separated string of tag names."""
@@ -73,3 +75,17 @@ class Post(db.Model):
 
     def __repr__(self):
         return f'<Post {self.title}>'
+
+
+class Comment(db.Model):
+    """Comment model representing user remarks on blog posts."""
+    __tablename__ = 'comments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, index=True, default=lambda: datetime.now(timezone.utc))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id', ondelete='CASCADE'), nullable=False)
+
+    def __repr__(self):
+        return f'<Comment {self.id} by User {self.user_id}>'

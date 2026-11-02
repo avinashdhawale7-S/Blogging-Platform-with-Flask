@@ -21,3 +21,15 @@ class PostForm(FlaskForm):
         description='Separate tags with commas, e.g. python, webdev, flask'
     )
     submit = SubmitField('Publish Post')
+
+
+class CommentForm(FlaskForm):
+    """Form for submitting a comment on a blog post."""
+    body = TextAreaField(
+        'Leave a Comment',
+        validators=[
+            DataRequired(message='Comment cannot be empty.'),
+            Length(min=2, max=1000, message='Comment must be between 2 and 1000 characters.')
+        ]
+    )
+    submit = SubmitField('Post Comment')

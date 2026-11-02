@@ -3,8 +3,8 @@ from flask import render_template, redirect, url_for, flash, request, abort, cur
 from flask_login import current_user, login_required
 from app import db
 from app.posts import bp
-from app.posts.forms import PostForm
-from app.models import Post, Tag
+from app.posts.forms import PostForm, CommentForm
+from app.models import Post, Tag, Comment
 
 ALLOWED_TAGS = [
     'p', 'b', 'i', 'u', 'em', 'strong', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
@@ -83,8 +83,10 @@ def create():
 
 @bp.route('/<int:post_id>')
 def detail(post_id: int):
-    """View an individual blog post with full author details and navigation."""
+    """View an individual blog post with comments and author details."""
     post = db.get_or_404(Post, post_id)
+    comment_form = CommentForm()
+
     # Calculate approximate reading time (avg 200 words per minute)
     words = len(bleach.clean(post.content, tags=[], strip=True).split())
     reading_time = max(1, round(words / 200))
@@ -93,8 +95,50 @@ def detail(post_id: int):
         'posts/detail.html',
         title=post.title,
         post=post,
-        reading_time=reading_time
+        reading_time=reading_time,
+        comment_form=comment_form
     )
+
+
+@bp.route('/<int:post_id>/comment', methods=['POST'])
+@login_required
+def add_comment(post_id: int):
+    """Add a comment to a blog post."""
+    post = db.get_or_404(Post, post_id)
+    form = CommentForm()
+
+    if form.validate_on_submit():
+        comment = Comment(
+            body=form.body.data.strip(),
+            author=current_user,
+            post=post
+        )
+        db.session.add(comment)
+        db.session.commit()
+        flash('Your comment has been posted successfully!', 'success')
+    else:
+        for error in form.body.errors:
+            flash(f'Comment error: {error}', 'danger')
+
+    return redirect(url_for('posts.detail', post_id=post.id, _anchor='comments'))
+
+
+@bp.route('/comment/<int:comment_id>/delete', methods=['POST'])
+@login_required
+def delete_comment(comment_id: int):
+    """Delete a comment (restricted to comment author or post author)."""
+    comment = db.get_or_404(Comment, comment_id)
+    
+    # Authorized if current user is comment author OR post author
+    if current_user != comment.author and current_user != comment.post.author:
+        abort(403)
+
+    post_id = comment.post_id
+    db.session.delete(comment)
+    db.session.commit()
+    flash('Comment has been deleted.', 'info')
+
+    return redirect(url_for('posts.detail', post_id=post_id, _anchor='comments'))
 
 
 @bp.route('/<int:post_id>/edit', methods=['GET', 'POST'])

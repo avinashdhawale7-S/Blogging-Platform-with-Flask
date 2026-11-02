@@ -26,13 +26,25 @@ A modern, scalable blogging platform built using Flask, Flask-SQLAlchemy, Flask-
 
 ### Week 4: Frontend: Displaying Posts and Navigation
 - **Jinja2 Frontend Architecture**:
-  - **Reusable Pagination Macro (`app/templates/_macros.html`)**: Generic `render_pagination()` component supporting multi-page navigation, active states, ellipsis windowing, and URL parameter propagation.
-  - **Home Page (`/`)**: Paginated feed with reading excerpts, author info, popular topics sidebar, and milestone tracking.
-  - **Individual Post View (`/posts/<id>`)**: Comprehensive reading view with breadcrumbs, reading time calculation, author profile badge, safe rich HTML rendering, and author action buttons with delete modal.
-  - **Public User Profile (`/user/<username>`)**: Author profile displaying avatar, join date, publication statistics, and a paginated list of all posts written by the user.
-- **Full Pagination Integration**:
-  - Configured `POSTS_PER_PAGE = 5` in `config.py`.
-  - Added SQLAlchemy pagination across home feed (`/`), full post list (`/posts/`), tag-filtered views (`/posts/tag/<tag_name>`), and author profiles (`/user/<username>`).
+  - Reusable pagination macro (`app/templates/_macros.html`) supporting windowing, Previous/Next buttons, and parameter preservation.
+  - Paginated home feed, post listing, and topic tags.
+  - Detailed post reading view with reading time estimates, author info, and breadcrumbs.
+  - Public author profile page (`/user/<username>`) with author stats and paginated articles.
+
+### Week 5: Commenting System
+- **Comment Data Model (`app/models.py`)**:
+  - Created `Comment` model with `body`, `created_at`, foreign key to `users.id`, and foreign key to `posts.id`.
+  - Added cascading relationships so deleting a post or user automatically deletes associated comments.
+- **Comment Form & Validation (`app/posts/forms.py`)**:
+  - Implemented `CommentForm` with CSRF protection and character length validation (2–1000 characters).
+- **Comment Views & Authorization (`app/posts/routes.py`)**:
+  - `POST /posts/<id>/comment`: Restricted to authenticated users (`@login_required`), persists comments, flashes status, and redirects back to `#comments`.
+  - `POST /posts/comment/<id>/delete`: Restricted to the comment author or the post author, preventing unauthorized comment deletions (403 Forbidden).
+- **User Interface (`app/templates/posts/detail.html`)**:
+  - Comment count header (`Comments (X)`).
+  - Clean comment form for logged-in users; prominent sign-in callout for visitors.
+  - Comment stream displaying author avatar, username linked to public profile, timestamp, comment body, and delete button for authors.
+  - Dynamic comment counters displayed on article cards across home and feed pages.
 
 ---
 
@@ -42,7 +54,7 @@ A modern, scalable blogging platform built using Flask, Flask-SQLAlchemy, Flask-
 Blogging-Platform-with-Flask/
 ├── app/
 │   ├── __init__.py           # Application Factory, Flask-Login & extensions
-│   ├── models.py             # User, Post, Tag models & post_tags association
+│   ├── models.py             # User, Post, Tag, Comment models & post_tags
 │   ├── auth/                 # Authentication Blueprint
 │   │   ├── __init__.py
 │   │   ├── forms.py          # WTForms: RegistrationForm, LoginForm
@@ -50,16 +62,16 @@ Blogging-Platform-with-Flask/
 │   ├── main/                 # Main Blueprint
 │   │   ├── __init__.py
 │   │   └── routes.py         # Home (paginated), User Profile (paginated), About
-│   ├── posts/                # Posts Blueprint
+│   ├── posts/                # Posts & Comments Blueprint
 │   │   ├── __init__.py
-│   │   ├── forms.py          # WTForms: PostForm
-│   │   └── routes.py         # CRUD: Create, Read, Edit, Delete, Tag filter (paginated)
+│   │   ├── forms.py          # WTForms: PostForm, CommentForm
+│   │   └── routes.py         # CRUD: Posts, Tags, and Comments
 │   ├── templates/            # Jinja2 templates
 │   │   ├── _macros.html      # Reusable pagination macro
 │   │   ├── base.html         # Responsive layout with dynamic Auth navbar
 │   │   ├── auth/             # Login, Register, Account settings views
 │   │   ├── main/             # Home (feed), Author profile, About views
-│   │   └── posts/            # Feed, Detail, Create, and Edit views
+│   │   └── posts/            # Feed, Detail (with comments), Create, and Edit views
 │   └── static/               # CSS and JS assets
 ├── migrations/               # Database migration scripts
 ├── instance/                 # SQLite database instance directory
