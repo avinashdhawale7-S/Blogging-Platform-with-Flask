@@ -1,6 +1,6 @@
 # Blogging Platform with Flask
 
-A modern, scalable blogging platform built using Flask, Flask-SQLAlchemy, Flask-Migrate, and Flask-Login, following the Application Factory pattern and modular Blueprints architecture.
+A modern, scalable blogging platform built using Flask, Flask-SQLAlchemy, Flask-Migrate, Flask-Login, and Flask-WTF, following the Application Factory pattern and modular Blueprints architecture.
 
 ---
 
@@ -14,20 +14,25 @@ A modern, scalable blogging platform built using Flask, Flask-SQLAlchemy, Flask-
 - **Base UI**: Built responsive layout using Bootstrap 5.
 
 ### Week 2: User Authentication & Session Management
-- **Flask-Login Integration**:
-  - Initialized `LoginManager` in `app/__init__.py` with custom login views and flash messages.
-  - Implemented `@login_manager.user_loader` callback.
-  - Extended `User` model with `UserMixin` and secure password hashing using Werkzeug (`generate_password_hash`, `check_password_hash`).
-- **Auth Blueprint (`app/auth`)**:
-  - Built secure forms with Flask-WTF and WTForms (`RegistrationForm`, `LoginForm`).
-  - Added duplicate username and email validation rules.
-  - Implemented `/auth/register`: User creation and password hashing.
-  - Implemented `/auth/login`: Credential verification, session creation via `login_user()`, and safe `next` parameter redirects.
-  - Implemented `/auth/logout`: Safe session termination via `logout_user()`.
-  - Implemented `/auth/profile`: Protected route guarded by `@login_required`.
-- **Dynamic Navigation & Templates**:
-  - Built modern authentication views: `login.html`, `register.html`, and `profile.html`.
-  - Updated navbar to reflect real-time authentication states (logged in dropdown vs. guest buttons).
+- **Flask-Login Integration**: Initialized `LoginManager`, custom user loader, and login views.
+- **Security & Models**: Password hashing with Werkzeug (`generate_password_hash`, `check_password_hash`) and `UserMixin`.
+- **Auth Blueprint**: User registration, login with remember-me, logout, and protected user profiles.
+
+### Week 3: Blog Post CRUD Functionality & Tagging
+- **Data Models for Tags & Posts**:
+  - Implemented `Tag` model (`tags` table) with unique names.
+  - Implemented `post_tags` many-to-many association table.
+  - Extended `Post` model with `updated_at` timestamp and many-to-many relationship to `Tag`.
+- **Flask-WTF Forms**:
+  - `PostForm`: Title, rich HTML content, and comma-separated tags field.
+- **Full CRUD Routes (`app/posts`)**:
+  - **Create (`/posts/create`)**: Authenticated creation of posts with tag assignment and rich text sanitization (`bleach`).
+  - **Read (`/posts/`, `/posts/<id>`, `/posts/tag/<tag_name>`)**: Feed browsing, article detail reading, and tag filtering.
+  - **Update (`/posts/<id>/edit`)**: Pre-populated edit form restricted to the post's author (403 Forbidden for unauthorized users).
+  - **Delete (`/posts/<id>/delete`)**: Safe deletion with modal confirmation, author check, and automatic cascade tag disassociation.
+- **Rich Text Editor Integration**:
+  - Integrated **CKEditor 5 Classic** for rich formatting (headings, lists, blockquotes, bold/italic, links).
+  - Configured server-side HTML sanitization with `bleach` to prevent Cross-Site Scripting (XSS).
 
 ---
 
@@ -36,25 +41,26 @@ A modern, scalable blogging platform built using Flask, Flask-SQLAlchemy, Flask-
 ```text
 Blogging-Platform-with-Flask/
 ├── app/
-│   ├── __init__.py           # Application Factory, Flask-Login and extension setup
-│   ├── models.py             # User (UserMixin) and Post SQLAlchemy models
+│   ├── __init__.py           # Application Factory, Flask-Login & extensions
+│   ├── models.py             # User, Post, Tag models & post_tags association
 │   ├── auth/                 # Authentication Blueprint
 │   │   ├── __init__.py
-│   │   ├── forms.py          # WTForms (RegistrationForm, LoginForm)
-│   │   └── routes.py         # Login, Register, Logout, Profile routes
+│   │   ├── forms.py          # WTForms: RegistrationForm, LoginForm
+│   │   └── routes.py         # Login, Register, Logout, Profile
 │   ├── main/                 # Main Blueprint (Home, About)
 │   │   ├── __init__.py
 │   │   └── routes.py
 │   ├── posts/                # Posts Blueprint
 │   │   ├── __init__.py
-│   │   └── routes.py
+│   │   ├── forms.py          # WTForms: PostForm
+│   │   └── routes.py         # CRUD: Create, Read, Edit, Delete, Tag filtering
 │   ├── templates/            # Jinja2 templates
 │   │   ├── base.html         # Responsive layout with dynamic Auth navbar
 │   │   ├── auth/             # Login, Register, Profile views
 │   │   ├── main/             # Home and About views
-│   │   └── posts/            # Posts feed view
+│   │   └── posts/            # Feed, Detail, Create, and Edit views
 │   └── static/               # CSS and JS assets
-├── migrations/               # Database migration versions
+├── migrations/               # Database migration scripts
 ├── instance/                 # SQLite database instance directory
 ├── .env.example              # Environment variables template
 ├── .gitignore                # Git ignore configuration
@@ -107,30 +113,20 @@ Open your browser and navigate to: [http://127.0.0.1:5000](http://127.0.0.1:5000
 
 ---
 
-## 🗄️ Database Models
+## 🗄️ Database Schema & Relationships
 
-### `User`
-- `id` (Integer, Primary Key)
-- `username` (String(64), Unique, Indexed)
-- `email` (String(120), Unique, Indexed)
-- `password_hash` (String(256), Not Null)
-- `created_at` (DateTime)
-- `posts` (Relationship -> `Post`)
-- Methods: `set_password()`, `check_password()`
-
-### `Post`
-- `id` (Integer, Primary Key)
-- `title` (String(140))
-- `content` (Text)
-- `created_at` (DateTime, Indexed)
-- `user_id` (Integer, Foreign Key -> `users.id`)
-- `author` (Backref -> `User`)
+- **User**: (1-to-many with `Post`)
+- **Post**: (many-to-many with `Tag` via `post_tags`, foreign key to `User`)
+- **Tag**: (many-to-many with `Post` via `post_tags`)
+- **post_tags**: (`post_id`, `tag_id`)
 
 ---
 
 ## 🛠️ Tech Stack
 - **Backend**: Python 3, Flask
-- **Authentication & Sessions**: Flask-Login, Werkzeug Security
+- **Rich Text Editor**: CKEditor 5 Classic
+- **HTML Sanitization**: Bleach
 - **Forms & Validation**: Flask-WTF, WTForms, email-validator
-- **ORM & Migrations**: Flask-SQLAlchemy, Flask-Migrate (Alembic)
+- **Authentication**: Flask-Login, Werkzeug Security
+- **Database ORM & Migrations**: Flask-SQLAlchemy, Flask-Migrate (Alembic)
 - **Frontend / Styling**: Jinja2, Bootstrap 5.3, Bootstrap Icons
