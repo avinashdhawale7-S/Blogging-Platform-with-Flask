@@ -3,27 +3,36 @@
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-lg-9">
-    <div class="mb-3">
-      <a href="{{ url_for('posts.index') }}" class="text-decoration-none text-muted small">
-        <i class="bi bi-arrow-left me-1"></i> Back to All Articles
-      </a>
-    </div>
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-3">
+      <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}" class="text-decoration-none">Home</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('posts.index') }}" class="text-decoration-none">Articles</a></li>
+        <li class="breadcrumb-item active text-truncate" style="max-width: 280px;" aria-current="page">{{ post.title }}</li>
+      </ol>
+    </nav>
 
+    <!-- Main Article Card -->
     <article class="card shadow-sm border-0 mb-4">
       <div class="card-body p-4 p-md-5">
         <!-- Post Header -->
         <header class="mb-4 pb-3 border-bottom">
           <h1 class="display-6 fw-bold text-dark mb-3">{{ post.title }}</h1>
           
-          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 text-muted small">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 text-muted small">
             <div class="d-flex align-items-center">
-              <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 38px; height: 38px; font-weight: bold;">
-                {{ post.author.username[0]|upper }}
-              </div>
+              <a href="{{ url_for('main.user_profile', username=post.author.username) }}" class="text-decoration-none">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm" style="width: 44px; height: 44px; font-weight: bold; font-size: 1.2rem;">
+                  {{ post.author.username[0]|upper }}
+                </div>
+              </a>
               <div>
-                <span class="fw-semibold text-dark">{{ post.author.username }}</span>
+                <a href="{{ url_for('main.user_profile', username=post.author.username) }}" class="fw-bold text-dark text-decoration-none d-block">
+                  {{ post.author.username }}
+                </a>
+                <span>Published on {{ post.created_at.strftime('%B %d, %Y') }}</span>
                 <span class="mx-1">&bull;</span>
-                <span>{{ post.created_at.strftime('%B %d, %Y') }}</span>
+                <span><i class="bi bi-book me-1"></i>{{ reading_time }} min read</span>
                 {% if post.updated_at and post.updated_at != post.created_at %}
                   <span class="mx-1">&bull;</span>
                   <span class="fst-italic">(Updated {{ post.updated_at.strftime('%b %d, %Y') }})</span>
@@ -56,9 +65,25 @@
           {% endif %}
         </header>
 
-        <!-- Post Content (Rich Text) -->
-        <div class="post-content lh-lg fs-5 text-dark">
+        <!-- Post Content (Rich HTML) -->
+        <div class="post-content lh-lg fs-5 text-dark mb-5">
           {{ post.content|safe }}
+        </div>
+
+        <!-- Author Bio Footer Box -->
+        <div class="p-4 bg-light rounded-3 border d-flex flex-column flex-sm-row align-items-center gap-3">
+          <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm flex-shrink-0" style="width: 56px; height: 56px; font-weight: bold; font-size: 1.5rem;">
+            {{ post.author.username[0]|upper }}
+          </div>
+          <div class="flex-grow-1 text-center text-sm-start">
+            <h5 class="fw-bold mb-1">Written by {{ post.author.username }}</h5>
+            <p class="text-muted small mb-0">Contributing author on FlaskBlog. Passionate about web development and sharing technical guides.</p>
+          </div>
+          <div class="flex-shrink-0">
+            <a href="{{ url_for('main.user_profile', username=post.author.username) }}" class="btn btn-outline-primary btn-sm px-3">
+              View Profile &rarr;
+            </a>
+          </div>
         </div>
       </div>
     </article>

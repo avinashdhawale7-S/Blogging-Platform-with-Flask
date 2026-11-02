@@ -1,5 +1,5 @@
 import bleach
-from flask import render_template, redirect, url_for, flash, request, abort
+from flask import render_template, redirect, url_for, flash, request, abort, current_app
 from flask_login import current_user, login_required
 from app import db
 from app.posts import bp
@@ -38,10 +38,25 @@ def sync_post_tags(post: Post, tags_string: str) -> None:
 
 @bp.route('/')
 def index():
-    """List all blog posts ordered by creation date."""
-    posts = Post.query.order_by(Post.created_at.desc()).all()
+    """List blog posts with pagination."""
+    page = request.args.get('page', 1, type=int)
+    per_page = current_app.config.get('POSTS_PER_PAGE', 5)
+
+    pagination = Post.query.order_by(Post.created_at.desc()).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+    posts = pagination.items
     all_tags = Tag.query.order_by(Tag.name.asc()).all()
-    return render_template('posts/index.html', title='Blog Feed', posts=posts, tags=all_tags)
+
+    return render_template(
+        'posts/index.html',
+        title='Blog Feed',
+        posts=posts,
+        pagination=pagination,
+        tags=all_tags
+    )
 
 
 @bp.route('/create', methods=['GET', 'POST'])
@@ -68,9 +83,18 @@ def create():
 
 @bp.route('/<int:post_id>')
 def detail(post_id: int):
-    """View a single blog post."""
+    """View an individual blog post with full author details and navigation."""
     post = db.get_or_404(Post, post_id)
-    return render_template('posts/detail.html', title=post.title, post=post)
+    # Calculate approximate reading time (avg 200 words per minute)
+    words = len(bleach.clean(post.content, tags=[], strip=True).split())
+    reading_time = max(1, round(words / 200))
+
+    return render_template(
+        'posts/detail.html',
+        title=post.title,
+        post=post,
+        reading_time=reading_time
+    )
 
 
 @bp.route('/<int:post_id>/edit', methods=['GET', 'POST'])
@@ -114,14 +138,24 @@ def delete(post_id: int):
 
 @bp.route('/tag/<string:tag_name>')
 def tag_filter(tag_name: str):
-    """Filter posts by tag/category."""
+    """Filter posts by tag/category with pagination."""
     tag = Tag.query.filter_by(name=tag_name.lower()).first_or_404()
-    posts = tag.posts.order_by(Post.created_at.desc()).all()
+    page = request.args.get('page', 1, type=int)
+    per_page = current_app.config.get('POSTS_PER_PAGE', 5)
+
+    pagination = tag.posts.order_by(Post.created_at.desc()).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+    posts = pagination.items
     all_tags = Tag.query.order_by(Tag.name.asc()).all()
+
     return render_template(
         'posts/index.html',
-        title=f'Posts tagged with #{tag.name}',
+        title=f'Posts tagged #{tag.name}',
         posts=posts,
+        pagination=pagination,
         selected_tag=tag,
         tags=all_tags
     )

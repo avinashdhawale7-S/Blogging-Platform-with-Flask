@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import render_pagination %}
 
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
@@ -11,8 +12,8 @@
         <i class="bi bi-x-circle me-1"></i> Clear Filter
       </a>
     {% else %}
-      <h2 class="fw-bold mb-1 text-dark">Blog Articles</h2>
-      <p class="text-muted mb-0">Explore stories, tutorials, and insights shared by our community.</p>
+      <h2 class="fw-bold mb-1 text-dark">Blog Articles Feed</h2>
+      <p class="text-muted mb-0">Browse through all published stories, guides, and tutorials.</p>
     {% endif %}
   </div>
 
@@ -32,15 +33,25 @@
 <div class="row g-4">
   <!-- Main Post Feed -->
   <div class="col-lg-8">
+    <div class="d-flex justify-content-between align-items-center mb-3 text-muted small">
+      <span>
+        {% if pagination.total > 0 %}
+          Showing page <strong>{{ pagination.page }}</strong> of <strong>{{ pagination.pages }}</strong> (Total: {{ pagination.total }} posts)
+        {% endif %}
+      </span>
+    </div>
+
     {% if posts %}
       <div class="d-flex flex-column gap-4">
         {% for post in posts %}
-          <div class="card border-0 shadow-sm">
+          <article class="card border-0 shadow-sm">
             <div class="card-body p-4">
               <div class="d-flex justify-content-between align-items-start mb-2">
-                <div class="small text-muted">
-                  <span class="fw-semibold text-dark">{{ post.author.username }}</span> &bull; 
-                  {{ post.created_at.strftime('%b %d, %Y') }}
+                <div class="small text-muted d-flex align-items-center">
+                  <a href="{{ url_for('main.user_profile', username=post.author.username) }}" class="fw-semibold text-dark text-decoration-none me-2">
+                    <i class="bi bi-person-circle text-primary me-1"></i>{{ post.author.username }}
+                  </a>
+                  <span>&bull; {{ post.created_at.strftime('%b %d, %Y') }}</span>
                 </div>
                 {% if post.tags %}
                   <div class="d-flex flex-wrap gap-1">
@@ -53,13 +64,13 @@
                 {% endif %}
               </div>
 
-              <h3 class="card-title fw-bold mb-3">
+              <h3 class="card-title fw-bold mb-2">
                 <a href="{{ url_for('posts.detail', post_id=post.id) }}" class="text-decoration-none text-dark">
                   {{ post.title }}
                 </a>
               </h3>
 
-              <div class="card-text text-muted mb-3 line-clamp-3">
+              <div class="card-text text-muted mb-3">
                 {{ post.content|striptags|truncate(220, True, '...') }}
               </div>
 
@@ -72,15 +83,23 @@
                 {% endif %}
               </div>
             </div>
-          </div>
+          </article>
         {% endfor %}
       </div>
+
+      <!-- Pagination Component -->
+      {% if selected_tag %}
+        {{ render_pagination(pagination, 'posts.tag_filter', tag_name=selected_tag.name) }}
+      {% else %}
+        {{ render_pagination(pagination, 'posts.index') }}
+      {% endif %}
+
     {% else %}
       <div class="card border-0 shadow-sm py-5 text-center text-muted">
         <div class="card-body">
           <i class="bi bi-journal-x display-3 d-block mb-3 text-secondary"></i>
-          <h4>No posts found!</h4>
-          <p class="text-muted mb-3">Be the first to share an article on the platform.</p>
+          <h4>No articles found!</h4>
+          <p class="text-muted mb-3">Be the first to share an article in this category.</p>
           {% if current_user.is_authenticated %}
             <a href="{{ url_for('posts.create') }}" class="btn btn-primary">
               <i class="bi bi-pencil me-1"></i> Write a Post Now
@@ -96,7 +115,7 @@
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-header bg-white py-3">
         <h5 class="card-title mb-0 fw-bold">
-          <i class="bi bi-tags me-2 text-primary"></i>Topics & Tags
+          <i class="bi bi-tags me-2 text-primary"></i>Topics & Categories
         </h5>
       </div>
       <div class="card-body">
@@ -109,7 +128,7 @@
             {% endfor %}
           </div>
         {% else %}
-          <p class="text-muted small mb-0">No tags added yet. Create a post with tags to populate categories.</p>
+          <p class="text-muted small mb-0">No tags added yet.</p>
         {% endif %}
       </div>
     </div>

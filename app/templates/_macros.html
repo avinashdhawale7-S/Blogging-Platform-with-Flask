@@ -1,0 +1,34 @@
+{% macro render_pagination(pagination, endpoint) %}
+  {% if pagination.pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4 mb-2">
+      <ul class="pagination justify-content-center shadow-sm">
+        <!-- Previous Button -->
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+          <a class="page-link" href="{% if pagination.has_prev %}{{ url_for(endpoint, page=pagination.prev_num, **kwargs) }}{% else %}#{% endif %}" aria-label="Previous">
+            <i class="bi bi-chevron-left me-1"></i>Previous
+          </a>
+        </li>
+
+        <!-- Page Numbers with Ellipsis Handling -->
+        {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+          {% if p %}
+            <li class="page-item {% if p == pagination.page %}active{% endif %}">
+              <a class="page-link" href="{{ url_for(endpoint, page=p, **kwargs) }}">{{ p }}</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled">
+              <span class="page-link">&hellip;</span>
+            </li>
+          {% endif %}
+        {% endfor %}
+
+        <!-- Next Button -->
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+          <a class="page-link" href="{% if pagination.has_next %}{{ url_for(endpoint, page=pagination.next_num, **kwargs) }}{% else %}#{% endif %}" aria-label="Next">
+            Next<i class="bi bi-chevron-right ms-1"></i>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  {% endif %}
+{% endmacro %}

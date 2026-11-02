@@ -14,3 +14,6 @@ class Config:
         'sqlite:///' + os.path.join(basedir, 'instance', 'blog.db')
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Pagination settings
+    POSTS_PER_PAGE = int(os.environ.get('POSTS_PER_PAGE', 5))

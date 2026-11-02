@@ -19,20 +19,20 @@ A modern, scalable blogging platform built using Flask, Flask-SQLAlchemy, Flask-
 - **Auth Blueprint**: User registration, login with remember-me, logout, and protected user profiles.
 
 ### Week 3: Blog Post CRUD Functionality & Tagging
-- **Data Models for Tags & Posts**:
-  - Implemented `Tag` model (`tags` table) with unique names.
-  - Implemented `post_tags` many-to-many association table.
-  - Extended `Post` model with `updated_at` timestamp and many-to-many relationship to `Tag`.
-- **Flask-WTF Forms**:
-  - `PostForm`: Title, rich HTML content, and comma-separated tags field.
-- **Full CRUD Routes (`app/posts`)**:
-  - **Create (`/posts/create`)**: Authenticated creation of posts with tag assignment and rich text sanitization (`bleach`).
-  - **Read (`/posts/`, `/posts/<id>`, `/posts/tag/<tag_name>`)**: Feed browsing, article detail reading, and tag filtering.
-  - **Update (`/posts/<id>/edit`)**: Pre-populated edit form restricted to the post's author (403 Forbidden for unauthorized users).
-  - **Delete (`/posts/<id>/delete`)**: Safe deletion with modal confirmation, author check, and automatic cascade tag disassociation.
-- **Rich Text Editor Integration**:
-  - Integrated **CKEditor 5 Classic** for rich formatting (headings, lists, blockquotes, bold/italic, links).
-  - Configured server-side HTML sanitization with `bleach` to prevent Cross-Site Scripting (XSS).
+- **Data Models for Tags & Posts**: `Tag` model, `post_tags` many-to-many relationship, and `updated_at` column.
+- **Flask-WTF Forms**: `PostForm` with title validation, rich text content, and comma-separated tags.
+- **Full CRUD Routes**: Create, Read, Edit, and Delete posts with strict author authorization rules (403 Forbidden).
+- **Rich Text Editor**: Integrated CKEditor 5 Classic with server-side HTML sanitization via `bleach`.
+
+### Week 4: Frontend: Displaying Posts and Navigation
+- **Jinja2 Frontend Architecture**:
+  - **Reusable Pagination Macro (`app/templates/_macros.html`)**: Generic `render_pagination()` component supporting multi-page navigation, active states, ellipsis windowing, and URL parameter propagation.
+  - **Home Page (`/`)**: Paginated feed with reading excerpts, author info, popular topics sidebar, and milestone tracking.
+  - **Individual Post View (`/posts/<id>`)**: Comprehensive reading view with breadcrumbs, reading time calculation, author profile badge, safe rich HTML rendering, and author action buttons with delete modal.
+  - **Public User Profile (`/user/<username>`)**: Author profile displaying avatar, join date, publication statistics, and a paginated list of all posts written by the user.
+- **Full Pagination Integration**:
+  - Configured `POSTS_PER_PAGE = 5` in `config.py`.
+  - Added SQLAlchemy pagination across home feed (`/`), full post list (`/posts/`), tag-filtered views (`/posts/tag/<tag_name>`), and author profiles (`/user/<username>`).
 
 ---
 
@@ -47,24 +47,25 @@ Blogging-Platform-with-Flask/
 │   │   ├── __init__.py
 │   │   ├── forms.py          # WTForms: RegistrationForm, LoginForm
 │   │   └── routes.py         # Login, Register, Logout, Profile
-│   ├── main/                 # Main Blueprint (Home, About)
+│   ├── main/                 # Main Blueprint
 │   │   ├── __init__.py
-│   │   └── routes.py
+│   │   └── routes.py         # Home (paginated), User Profile (paginated), About
 │   ├── posts/                # Posts Blueprint
 │   │   ├── __init__.py
 │   │   ├── forms.py          # WTForms: PostForm
-│   │   └── routes.py         # CRUD: Create, Read, Edit, Delete, Tag filtering
+│   │   └── routes.py         # CRUD: Create, Read, Edit, Delete, Tag filter (paginated)
 │   ├── templates/            # Jinja2 templates
+│   │   ├── _macros.html      # Reusable pagination macro
 │   │   ├── base.html         # Responsive layout with dynamic Auth navbar
-│   │   ├── auth/             # Login, Register, Profile views
-│   │   ├── main/             # Home and About views
+│   │   ├── auth/             # Login, Register, Account settings views
+│   │   ├── main/             # Home (feed), Author profile, About views
 │   │   └── posts/            # Feed, Detail, Create, and Edit views
 │   └── static/               # CSS and JS assets
 ├── migrations/               # Database migration scripts
 ├── instance/                 # SQLite database instance directory
 ├── .env.example              # Environment variables template
 ├── .gitignore                # Git ignore configuration
-├── config.py                 # Configuration settings
+├── config.py                 # Configuration settings (pagination, db, keys)
 ├── requirements.txt          # Python dependencies
 ├── run.py                    # Application entry point
 └── README.md                 # Project documentation
@@ -113,20 +114,10 @@ Open your browser and navigate to: [http://127.0.0.1:5000](http://127.0.0.1:5000
 
 ---
 
-## 🗄️ Database Schema & Relationships
-
-- **User**: (1-to-many with `Post`)
-- **Post**: (many-to-many with `Tag` via `post_tags`, foreign key to `User`)
-- **Tag**: (many-to-many with `Post` via `post_tags`)
-- **post_tags**: (`post_id`, `tag_id`)
-
----
-
 ## 🛠️ Tech Stack
 - **Backend**: Python 3, Flask
+- **Frontend / Templating**: Jinja2, Bootstrap 5.3, Bootstrap Icons
 - **Rich Text Editor**: CKEditor 5 Classic
-- **HTML Sanitization**: Bleach
-- **Forms & Validation**: Flask-WTF, WTForms, email-validator
-- **Authentication**: Flask-Login, Werkzeug Security
+- **Security & Sanitization**: Bleach, Werkzeug Security, Flask-WTF (CSRF)
+- **Authentication**: Flask-Login
 - **Database ORM & Migrations**: Flask-SQLAlchemy, Flask-Migrate (Alembic)
-- **Frontend / Styling**: Jinja2, Bootstrap 5.3, Bootstrap Icons
