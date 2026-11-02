@@ -2,11 +2,16 @@ import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_login import LoginManager
 from config import Config
 
-# Initialize extensions outside create_app so they can be imported across modules
+# Initialize extensions
 db = SQLAlchemy()
 migrate = Migrate()
+login_manager = LoginManager()
+login_manager.login_view = 'auth.login'
+login_manager.login_message = 'Please log in to access this page.'
+login_manager.login_message_category = 'warning'
 
 
 def create_app(config_class=Config):
@@ -23,8 +28,9 @@ def create_app(config_class=Config):
     # Bind extensions to app
     db.init_app(app)
     migrate.init_app(app, db)
+    login_manager.init_app(app)
 
-    # Import models so Flask-Migrate / Alembic can discover metadata
+    # Import models so Flask-Migrate / Alembic and user_loader are registered
     from app import models
 
     # Register Blueprints
@@ -33,5 +39,8 @@ def create_app(config_class=Config):
 
     from app.posts import bp as posts_bp
     app.register_blueprint(posts_bp, url_prefix='/posts')
+
+    from app.auth import bp as auth_bp
+    app.register_blueprint(auth_bp, url_prefix='/auth')
 
     return app

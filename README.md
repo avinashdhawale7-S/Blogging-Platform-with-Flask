@@ -1,26 +1,33 @@
 # Blogging Platform with Flask
 
-A modern, scalable blogging platform built using Flask, Flask-SQLAlchemy, and Flask-Migrate, following the Application Factory pattern and modular Blueprints architecture.
+A modern, scalable blogging platform built using Flask, Flask-SQLAlchemy, Flask-Migrate, and Flask-Login, following the Application Factory pattern and modular Blueprints architecture.
 
 ---
 
-## 📌 Week 1: Flask Setup and Basic Structure
+## 📌 Milestones
 
-### Objectives Completed:
-1. **Flask Environment**: Set up virtual environment and core project dependencies (`Flask`, `Flask-SQLAlchemy`, `Flask-Migrate`, `python-dotenv`).
-2. **Modular Architecture & Blueprints**:
-   - Implemented the Application Factory pattern (`create_app()`) in `app/__init__.py`.
-   - Structured routes using Blueprints:
-     - `main`: Core pages (`/` home, `/about`).
-     - `posts`: Blog post management and feeds (`/posts/`).
-3. **Database Configuration**:
-   - Configured SQLite database with SQLAlchemy ORM (`app/models.py`).
-   - Defined `User` and `Post` relational models with one-to-many relationship and foreign key constraints.
-   - Initialized database versioning with Flask-Migrate (`migrations/` directory).
-   - Applied initial migration to create the `users` and `posts` tables.
-4. **Templates & UI**:
-   - Created base Jinja2 template (`app/templates/base.html`) styled with Bootstrap 5.
-   - Built home, about, and post listing views.
+### Week 1: Flask Setup and Basic Structure
+- **Virtual Environment & Dependencies**: Initialized environment with `Flask`, `Flask-SQLAlchemy`, `Flask-Migrate`, and `python-dotenv`.
+- **Application Factory Pattern**: Implemented `create_app()` in `app/__init__.py`.
+- **Modular Blueprints**: Created `main` and `posts` blueprints.
+- **Relational Models & Migrations**: Configured SQLAlchemy with `User` and `Post` models and initialized Alembic migrations.
+- **Base UI**: Built responsive layout using Bootstrap 5.
+
+### Week 2: User Authentication & Session Management
+- **Flask-Login Integration**:
+  - Initialized `LoginManager` in `app/__init__.py` with custom login views and flash messages.
+  - Implemented `@login_manager.user_loader` callback.
+  - Extended `User` model with `UserMixin` and secure password hashing using Werkzeug (`generate_password_hash`, `check_password_hash`).
+- **Auth Blueprint (`app/auth`)**:
+  - Built secure forms with Flask-WTF and WTForms (`RegistrationForm`, `LoginForm`).
+  - Added duplicate username and email validation rules.
+  - Implemented `/auth/register`: User creation and password hashing.
+  - Implemented `/auth/login`: Credential verification, session creation via `login_user()`, and safe `next` parameter redirects.
+  - Implemented `/auth/logout`: Safe session termination via `logout_user()`.
+  - Implemented `/auth/profile`: Protected route guarded by `@login_required`.
+- **Dynamic Navigation & Templates**:
+  - Built modern authentication views: `login.html`, `register.html`, and `profile.html`.
+  - Updated navbar to reflect real-time authentication states (logged in dropdown vs. guest buttons).
 
 ---
 
@@ -29,27 +36,25 @@ A modern, scalable blogging platform built using Flask, Flask-SQLAlchemy, and Fl
 ```text
 Blogging-Platform-with-Flask/
 ├── app/
-│   ├── __init__.py           # Application Factory (create_app), extension initialization
-│   ├── models.py             # SQLAlchemy models (User, Post)
-│   ├── main/                 # Main Blueprint
+│   ├── __init__.py           # Application Factory, Flask-Login and extension setup
+│   ├── models.py             # User (UserMixin) and Post SQLAlchemy models
+│   ├── auth/                 # Authentication Blueprint
 │   │   ├── __init__.py
-│   │   └── routes.py         # Routes for Home and About
+│   │   ├── forms.py          # WTForms (RegistrationForm, LoginForm)
+│   │   └── routes.py         # Login, Register, Logout, Profile routes
+│   ├── main/                 # Main Blueprint (Home, About)
+│   │   ├── __init__.py
+│   │   └── routes.py
 │   ├── posts/                # Posts Blueprint
 │   │   ├── __init__.py
-│   │   └── routes.py         # Routes for Blog Posts
+│   │   └── routes.py
 │   ├── templates/            # Jinja2 templates
-│   │   ├── base.html         # Base template with Bootstrap 5 navbar and footer
-│   │   ├── main/
-│   │   │   ├── index.html    # Home page
-│   │   │   └── about.html    # Architecture overview
-│   │   └── posts/
-│   │       └── index.html    # Posts feed page
-│   └── static/               # Static assets
-│       ├── css/
-│       │   └── style.css
-│       └── js/
-│           └── main.js
-├── migrations/               # Alembic / Flask-Migrate database migration scripts
+│   │   ├── base.html         # Responsive layout with dynamic Auth navbar
+│   │   ├── auth/             # Login, Register, Profile views
+│   │   ├── main/             # Home and About views
+│   │   └── posts/            # Posts feed view
+│   └── static/               # CSS and JS assets
+├── migrations/               # Database migration versions
 ├── instance/                 # SQLite database instance directory
 ├── .env.example              # Environment variables template
 ├── .gitignore                # Git ignore configuration
@@ -89,9 +94,8 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 5. Initialize & Apply Database Migrations
+### 5. Apply Database Migrations
 ```bash
-# If running for the first time on a fresh setup:
 flask db upgrade
 ```
 
@@ -109,9 +113,10 @@ Open your browser and navigate to: [http://127.0.0.1:5000](http://127.0.0.1:5000
 - `id` (Integer, Primary Key)
 - `username` (String(64), Unique, Indexed)
 - `email` (String(120), Unique, Indexed)
-- `password_hash` (String(256))
+- `password_hash` (String(256), Not Null)
 - `created_at` (DateTime)
 - `posts` (Relationship -> `Post`)
+- Methods: `set_password()`, `check_password()`
 
 ### `Post`
 - `id` (Integer, Primary Key)
@@ -124,6 +129,8 @@ Open your browser and navigate to: [http://127.0.0.1:5000](http://127.0.0.1:5000
 ---
 
 ## 🛠️ Tech Stack
-- **Backend**: Python, Flask
+- **Backend**: Python 3, Flask
+- **Authentication & Sessions**: Flask-Login, Werkzeug Security
+- **Forms & Validation**: Flask-WTF, WTForms, email-validator
 - **ORM & Migrations**: Flask-SQLAlchemy, Flask-Migrate (Alembic)
 - **Frontend / Styling**: Jinja2, Bootstrap 5.3, Bootstrap Icons
