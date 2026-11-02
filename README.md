@@ -1,6 +1,6 @@
 # Blogging Platform with Flask
 
-A modern, scalable blogging platform built using Flask, Flask-SQLAlchemy, Flask-Migrate, Flask-Login, and Flask-WTF, following the Application Factory pattern and modular Blueprints architecture.
+A production-ready blogging platform built using Flask, Flask-SQLAlchemy, Flask-Migrate, Flask-Login, and Flask-WTF, following the Application Factory pattern and modular Blueprints architecture.
 
 ---
 
@@ -38,13 +38,21 @@ A modern, scalable blogging platform built using Flask, Flask-SQLAlchemy, Flask-
 
 ### Week 6: Search and Filtering
 - **SQLAlchemy ORM Search**:
-  - Utilized `or_` and `ilike` in `app/posts/routes.py` to perform case-insensitive keyword searches across both `Post.title` and `Post.content`.
-- **Category & Tag Filtering**:
-  - Query filtering via `Post.tags.any(Tag.name == selected_tag)` allowing users to filter by specific topics or combine with text search.
-- **Global & Dedicated Search UI**:
-  - Embedded global search input directly into the top navigation bar (`app/templates/base.html`).
-  - Created a dedicated search interface (`app/templates/posts/search.html`) featuring search keyword input, category dropdown, active filter pill badges, result count indicator, and an empty state.
-  - Integrated smart pagination preserving `q` and `tag` query arguments across pages.
+  - Case-insensitive keyword search across `Post.title` and `Post.content` using `or_` and `ilike`.
+  - Tag and category filtering using `Post.tags.any(Tag.name == selected_tag)`.
+  - Global search bar embedded in navbar and dedicated search/filter page with active filter pills and query-preserving pagination.
+
+### Week 7: Deployment Preparation and Testing
+- **Unit Testing Suite (`tests/`)**:
+  - Built comprehensive test suite using `pytest` with isolated in-memory SQLite fixtures (`TestingConfig`).
+  - 18 automated unit tests covering authentication, post CRUD, authorization guards (403), HTML sanitization, comments, and search.
+- **Production WSGI & Gunicorn**:
+  - Configured `wsgi.py` production entry point.
+  - Added `gunicorn` WSGI server configuration with multi-worker execution.
+- **Containerization (Docker & Docker Compose)**:
+  - Created production-ready `Dockerfile` with non-root security user (`appuser`), healthcheck, and Gunicorn command.
+  - Configured `.dockerignore` to exclude temporary files and virtual environments.
+  - Created `docker-compose.yml` with persistent volume mounting for SQLite database storage.
 
 ---
 
@@ -56,79 +64,95 @@ Blogging-Platform-with-Flask/
 │   ├── __init__.py           # Application Factory, Flask-Login & extensions
 │   ├── models.py             # User, Post, Tag, Comment models & post_tags
 │   ├── auth/                 # Authentication Blueprint
-│   │   ├── __init__.py
-│   │   ├── forms.py          # WTForms: RegistrationForm, LoginForm
-│   │   └── routes.py         # Login, Register, Logout, Profile
-│   ├── main/                 # Main Blueprint
-│   │   ├── __init__.py
-│   │   └── routes.py         # Home (paginated), User Profile (paginated), About
+│   ├── main/                 # Main Blueprint (Home, Author profile, About)
 │   ├── posts/                # Posts, Tags, Comments & Search Blueprint
-│   │   ├── __init__.py
-│   │   ├── forms.py          # WTForms: PostForm, CommentForm
-│   │   └── routes.py         # CRUD, Search, Filter, Comments
-│   ├── templates/            # Jinja2 templates
-│   │   ├── _macros.html      # Reusable pagination macro
-│   │   ├── base.html         # Responsive layout with dynamic Auth navbar & global search
-│   │   ├── auth/             # Login, Register, Account settings views
-│   │   ├── main/             # Home (feed), Author profile, About views
-│   │   └── posts/            # Feed, Detail, Create, Edit, and Search views
+│   ├── templates/            # Jinja2 templates (Navbar, Search, Posts, Auth, Profiles)
 │   └── static/               # CSS and JS assets
+├── tests/                    # Pytest Unit Test Suite
+│   ├── conftest.py           # Fixtures: app, client, runner, auth helper
+│   ├── test_auth.py          # Authentication & password hashing tests
+│   ├── test_posts.py         # Post CRUD, authorization & sanitization tests
+│   ├── test_comments.py      # Commenting system tests
+│   └── test_search.py        # Search and tag filtering tests
 ├── migrations/               # Database migration scripts
 ├── instance/                 # SQLite database instance directory
+├── .dockerignore             # Docker build exclusions
 ├── .env.example              # Environment variables template
 ├── .gitignore                # Git ignore configuration
-├── config.py                 # Configuration settings (pagination, db, keys)
-├── requirements.txt          # Python dependencies
-├── run.py                    # Application entry point
+├── config.py                 # Multi-environment configuration (Dev, Test, Prod)
+├── Dockerfile                # Production Docker container definition
+├── docker-compose.yml        # Docker Compose configuration
+├── requirements.txt          # Python dependencies (includes gunicorn & pytest)
+├── run.py                    # Development application entry point
+├── wsgi.py                   # Production WSGI entry point
 └── README.md                 # Project documentation
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🧪 Running Unit Tests
 
-### 1. Prerequisites
-- Python 3.10+
-- Git
+Run the complete test suite using `pytest`:
 
-### 2. Clone the Repository
 ```bash
-git clone https://github.com/avinashdhawale7-S/Blogging-Platform-with-Flask.git
-cd Blogging-Platform-with-Flask
+# Run all tests
+pytest -v
+
+# Run with short test summary
+pytest -q
 ```
 
-### 3. Create and Activate Virtual Environment
-```bash
-# Windows
-python -m venv .venv
-.\.venv\Scripts\activate
+All 18 unit tests execute against an isolated in-memory SQLite database.
 
-# macOS / Linux
-python3 -m venv .venv
-source .venv/bin/activate
-```
+---
 
-### 4. Install Dependencies
+## 🚀 Deployment
+
+### Option A: Local / Virtual Environment
 ```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-### 5. Apply Database Migrations
-```bash
+# Apply migrations
 flask db upgrade
-```
 
-### 6. Run the Application
-```bash
+# Run with Gunicorn (Linux/macOS/Cloud)
+gunicorn --bind 0.0.0.0:5000 --workers 4 wsgi:app
+
+# Or development mode (Windows/All)
 python run.py
 ```
-Open your browser and navigate to: [http://127.0.0.1:5000](http://127.0.0.1:5000)
+
+### Option B: Docker Container
+```bash
+# Build the Docker image
+docker build -t flask-blog .
+
+# Run the container
+docker run -d -p 5000:5000 -v $(pwd)/instance:/app/instance --name flask_blog flask-blog
+```
+
+### Option C: Docker Compose
+```bash
+# Start the container stack
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop the application
+docker compose down
+```
+Access the application at: [http://localhost:5000](http://localhost:5000)
 
 ---
 
 ## 🛠️ Tech Stack
 - **Backend**: Python 3, Flask
-- **ORM & Querying**: SQLAlchemy (`or_`, `ilike`, `any`), Flask-SQLAlchemy, Flask-Migrate
+- **WSGI Production Server**: Gunicorn
+- **Containerization**: Docker, Docker Compose
+- **Testing**: Pytest (18 automated tests)
+- **ORM & Migrations**: Flask-SQLAlchemy, Flask-Migrate (Alembic)
 - **Frontend / Templating**: Jinja2, Bootstrap 5.3, Bootstrap Icons
 - **Rich Text Editor**: CKEditor 5 Classic
 - **Security & Sanitization**: Bleach, Werkzeug Security, Flask-WTF (CSRF)

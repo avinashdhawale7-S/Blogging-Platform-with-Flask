@@ -17,3 +17,30 @@ class Config:
 
     # Pagination settings
     POSTS_PER_PAGE = int(os.environ.get('POSTS_PER_PAGE', 5))
+
+
+class DevelopmentConfig(Config):
+    """Development environment configuration."""
+    DEBUG = True
+
+
+class TestingConfig(Config):
+    """Testing environment configuration using in-memory SQLite database."""
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    WTF_CSRF_ENABLED = False
+
+
+class ProductionConfig(Config):
+    """Production environment configuration."""
+    DEBUG = False
+    # In production, require a strong secret key or fallback securely
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'production-fallback-key-replace-in-env'
+
+
+config_by_name = {
+    'development': DevelopmentConfig,
+    'testing': TestingConfig,
+    'production': ProductionConfig,
+    'default': DevelopmentConfig
+}
