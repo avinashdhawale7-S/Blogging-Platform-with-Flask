@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="p-5 mb-4 bg-white rounded-3 shadow-sm border">
+  <div class="container-fluid py-3">
+    <h1 class="display-5 fw-bold text-dark">Welcome to FlaskBlog!</h1>
+    <p class="col-md-8 fs-5 text-muted">
+      A modern, modular blogging platform built with Flask, SQLAlchemy ORM, Flask-Migrate database migrations, and clean Blueprint architecture.
+    </p>
+    <div class="d-flex gap-2 mt-4">
+      <a href="{{ url_for('posts.index') }}" class="btn btn-primary btn-lg px-4">
+        <i class="bi bi-file-earmark-richtext me-1"></i> Browse Posts
+      </a>
+      <a href="{{ url_for('main.about') }}" class="btn btn-outline-secondary btn-lg px-4">
+        <i class="bi bi-info-circle me-1"></i> Architecture Overview
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-2">
+  <div class="col-md-8">
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header bg-white py-3">
+        <h4 class="card-title mb-0 fw-bold">
+          <i class="bi bi-clock-history me-2 text-primary"></i>Recent Articles
+        </h4>
+      </div>
+      <div class="card-body">
+        {% if posts %}
+          <div class="list-group list-group-flush">
+            {% for post in posts %}
+              <div class="list-group-item px-0 py-3">
+                <h5 class="mb-1 text-primary">{{ post.title }}</h5>
+                <p class="mb-1 text-muted">{{ post.content[:150] }}{% if post.content|length > 150 %}...{% endif %}</p>
+                <small class="text-secondary">
+                  By {{ post.author.username if post.author else 'Anonymous' }} &bull; {{ post.created_at.strftime('%b %d, %Y') if post.created_at else '' }}
+                </small>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-journal-x display-3 d-block mb-3 text-secondary"></i>
+            <h5>No posts published yet!</h5>
+            <p class="mb-0">The database and migrations are set up and ready to accept posts.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header bg-primary text-white py-3">
+        <h5 class="card-title mb-0 fw-bold">
+          <i class="bi bi-check-circle me-2"></i>Week 1 Milestones
+        </h5>
+      </div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex align-items-center">
+          <i class="bi bi-check2-circle text-success fs-5 me-2"></i>
+          <span>Flask Application Factory (`create_app`)</span>
+        </li>
+        <li class="list-group-item d-flex align-items-center">
+          <i class="bi bi-check2-circle text-success fs-5 me-2"></i>
+          <span>Modular Blueprints (`main`, `posts`)</span>
+        </li>
+        <li class="list-group-item d-flex align-items-center">
+          <i class="bi bi-check2-circle text-success fs-5 me-2"></i>
+          <span>SQLAlchemy ORM (`User`, `Post` models)</span>
+        </li>
+        <li class="list-group-item d-flex align-items-center">
+          <i class="bi bi-check2-circle text-success fs-5 me-2"></i>
+          <span>Flask-Migrate database versioning</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
